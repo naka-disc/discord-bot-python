@@ -14,7 +14,7 @@ source .venv/bin/activate
 ```
 
 ```sh
-pip install discord
+pip install -r requirements.txt
 ```
 
 ```sh
