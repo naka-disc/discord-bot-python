@@ -41,7 +41,7 @@ async def on_voice_state_update(member, before, after):
 			        alert_channel,
 			        EmbedGenerator(
 				        '入室通知',
-                        ":loud_sound: {channnelname} ボイスチャンネル".format(after.channel.name),
+                        ":loud_sound: {channnelname} ボイスチャンネル".format(channnelname = after.channel.name),
 				        name,
 				    )
 			    )
@@ -53,7 +53,7 @@ async def on_voice_state_update(member, before, after):
 			        alert_channel,
 			        EmbedGenerator(
 				        '退室通知',
-                        ":loud_sound: {channnelname} ボイスチャンネル".format(before.channel.name),
+                        ":loud_sound: {channnelname} ボイスチャンネル".format(channnelname = before.channel.name),
 				        name,
 				    )
 			    )
