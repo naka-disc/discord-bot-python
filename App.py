@@ -12,6 +12,9 @@ bot_token   = os.getenv("DISCORD_VC_CHECK_BOT_TOKEN")
 client = discord.Client()
 @client.event
 async def on_voice_state_update(member, before, after):
+    # 接続したmemberがbotの場合、記録は必要無い為無視。（byこはく
+    if member.bot: return
+    
     # print(member.name) # name
     # print(member.discriminator) # ID
 
@@ -30,14 +33,62 @@ async def on_voice_state_update(member, before, after):
         # intで数値に変えないとライブラリ内部でのマッチ処理で合わない
         alert_channel = client.get_channel(int(post_ch_id))
 
+		#以下、入退室ログはEmbedオブジェクトによる通知に致しました。(byこはく
         # 入室か退室かで処理分岐
         # 書き込み先のチャンネルに定型文を書き出し
         if before.channel is None: 
-            msg = "入室通知: {now} | {name}".format(now = now, name = name)
-            await alert_channel.send(msg)
+            await embedSender(
+			        alert_channel,
+			        EmbedGenerator(
+				        '入室通知',
+                        ":loud_sound: {channnelname} ボイスチャンネル".format(after.channel.name),
+				        name,
+				    )
+			    )
+            
+#            msg = "入室通知: {now} | {name}".format(now = now, name = name)
+#            await alert_channel.send(msg)
         elif after.channel is None: 
-            msg = "退室通知: {now} | {name}".format(now = now, name = name)
-            await alert_channel.send(msg)
+            await embedSender(
+			        alert_channel,
+			        EmbedGenerator(
+				        '退室通知',
+                        ":loud_sound: {channnelname} ボイスチャンネル".format(before.channel.name),
+				        name,
+				    )
+			    )
+#            msg = "退室通知: {now} | {name}".format(now = now, name = name)
+#            await alert_channel.send(msg)
+
+
+# 書式変更済みタイムスタンプを返す（byこはく
+def TimeStamp(): return datetime.datetime.now().strftime('%Y年%m月%d日　%H時%M分')
+
+# Embedオブジェクト出力（byこはく
+async def embedSender(channel, embed): await channel.send(embed = embed)
+
+# Embedオブジェクト作成（byこはく
+def EmbedGenerator(title, logLocation, memberName = ''):
+
+	embedMessages = ''
+
+	# タイムスタンプ出力
+	embedMessages += 'TimeStamp：'
+	embedMessages += TimeStamp()
+	embedMessages += '\n'
+
+	# メンバー名出力
+	embedMessages += 'Member：'
+	embedMessages += memberName
+	embedMessages += '\n'
+
+	# 記録場所
+	embedMessages += 'LogLocation：'
+	embedMessages += logLocation
+	embedMessages += '\n'
+
+	# Embed作成
+	return discord.Embed(title = title, description = embedMessages)# Embed生成
 
 
 client.run(bot_token)
