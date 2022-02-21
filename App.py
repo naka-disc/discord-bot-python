@@ -24,8 +24,7 @@ client = discord.Client()
 async def on_voice_state_update(member, before, after):
     # 接続したmemberがbotの場合、記録は必要無い為無視。（byこはく
     if member.bot: return
-    print()
-    
+
     # print(member.name) # name
     # print(member.discriminator) # ID
 
@@ -57,26 +56,21 @@ async def on_voice_state_update(member, before, after):
                     createEmbed(
                         '入室通知',
                         ":loud_sound: {channnelname} ボイスチャンネル".format(channnelname = after.channel.name),
+                        -1, # TODO: 入室時は滞在時間がないため暫定で-1いれてごまかしてる
                         name,
                     )
                 )
             
         elif after.channel is None:
-            # 直近の入室ログを取得
-            # data = get_recent_vc_access_records(discriminator)
-            # print(data)
-
             # VCの入退室ログに退室日時を登録
-            # 滞在時間秒数は、分と秒に換算したいので、ここで処理
             total_second = edit_vc_access_records(id, now)
-            minutes = int(total_second / 60)
-            second = int(total_second % 60)
 
             await sendEmbed(
                     alert_channel,
                     createEmbed(
                         '退室通知',
-                        ":loud_sound: {channnelname} ボイスチャンネル".format(channnelname = after.channel.name),
+                        ":loud_sound: {channnelname} ボイスチャンネル".format(channnelname = before.channel.name),
+                        total_second,
                         name,
                     )
                 )
@@ -98,7 +92,7 @@ def add_vc_access_records(member_id: str, member_name: str, member_discriminator
     connection.commit()
 
 # 入退室ログを更新（＝退室時の処理）
-def edit_vc_access_records(member_id: str, target_date: datetime.datetime) -> float:
+def edit_vc_access_records(member_id: str, target_date: datetime.datetime) -> int:
     # 該当メンバーの、直近の入退室ログを取得
     # 入室時に、入室時間しか持たせてないデータをINSERTしているので、直近のをとってくれば問題ないはず
     e = get_recent_vc_access_records(member_id)
@@ -115,30 +109,40 @@ def edit_vc_access_records(member_id: str, target_date: datetime.datetime) -> fl
     connection.commit()
 
     # 出力用に、滞在時間秒数を返す
-    return total_second
+    # floatである必要がないので、ここでintにして小数点以下切り捨て
+    return int(total_second)
 
 # Embedオブジェクト出力（byこはく
 async def sendEmbed(channel: any, embed: discord.Embed) -> any:
     await channel.send(embed = embed)
 
 # Embedオブジェクト作成（byこはく
-def createEmbed(title, logLocation, memberName = '') -> discord.Embed:
+def createEmbed(title: str, log_location: str, total_second: int, member_name = '') -> discord.Embed:
 
     embedMessages = ''
 
     # タイムスタンプ出力
+    # TODO: ここでnow()じゃなく、on_voice_state_updateで取得してるやつを使うほうが良い
     embedMessages += 'TimeStamp：'
     embedMessages += datetime.datetime.now().strftime('%Y年%m月%d日　%H時%M分')
     embedMessages += '\n'
 
+    # 滞在時間を出力
+    # TODO: 入室時は暫定で-1いれてるので、ここで分岐して対処することにしてる
+    if total_second != -1:
+        embedMessages += 'StayTime:：'
+        # 割ってfloatになった後にintで小数点以下切り捨てて整数にし、文字列にしてるのでこんなことになってる
+        embedMessages += str(int(total_second / 60))  + "分" + str(int(total_second % 60)) + "秒"
+        embedMessages += '\n'
+
     # メンバー名出力
     embedMessages += 'Member：'
-    embedMessages += memberName
+    embedMessages += member_name
     embedMessages += '\n'
 
     # 記録場所
     embedMessages += 'LogLocation：'
-    embedMessages += logLocation
+    embedMessages += log_location
     embedMessages += '\n'
 
     # Embed作成
