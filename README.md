@@ -1,5 +1,6 @@
-# discord-bot-vc-check
-Discordのボイスチャットチャンネルの入退室を監視するBot
+# discord-bot-python
+- DiscordのBot。
+- Python3で作成。
 
 
 ## 前提
